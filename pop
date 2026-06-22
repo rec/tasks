@@ -32,7 +32,7 @@ def project_name(args: list[str]) -> str:
 def main() -> None:
     name = project_name(sys.argv[1:])
     root = Path(__file__).resolve().parent
-    task_file = root / f"{name}.md"
+    task_file = root / "tasks" / f"{name}.md"
     done_file = root / "done" / f"{name}.md"
 
     def is_sep(s: str) -> bool:

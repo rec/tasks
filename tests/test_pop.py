@@ -20,12 +20,12 @@ class PopTests(unittest.TestCase):
         fixture = FIXTURE_ROOT / name
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            task_root = root / "tasks"
-            shutil.copytree(fixture / "before", task_root)
-            shutil.copy2(REPO_ROOT / "pop", task_root / "pop")
+            task_dir = root / "tasks"
+            shutil.copytree(fixture / "before", task_dir)
+            shutil.copy2(REPO_ROOT / "pop", root / "pop")
             if project_name != "sample":
-                (task_root / f"{project_name}.md").write_text(
-                    (task_root / "sample.md").read_text(),
+                (task_dir / f"{project_name}.md").write_text(
+                    (task_dir / "sample.md").read_text(),
                 )
 
             project_root = root / "sample"
@@ -34,7 +34,7 @@ class PopTests(unittest.TestCase):
             (project_root / ".git").mkdir()
 
             result = subprocess.run(
-                [sys.executable, str(task_root / "pop"), *(args or [])],
+                [sys.executable, str(root / "pop"), *(args or [])],
                 cwd=work_dir,
                 capture_output=True,
                 text=True,
@@ -49,12 +49,12 @@ class PopTests(unittest.TestCase):
             self.assertEqual(result.stdout, (expected / "stdout.txt").read_text())
             self.assertEqual(result.stderr, (expected / "stderr.txt").read_text())
             self.assertEqual(
-                (task_root / f"{project_name}.md").read_text(),
+                (task_dir / f"{project_name}.md").read_text(),
                 (expected / "sample.md").read_text(),
             )
 
             expected_done = expected / "done" / "sample.md"
-            actual_done = task_root / "done" / f"{project_name}.md"
+            actual_done = root / "done" / f"{project_name}.md"
             self.assertEqual(actual_done.exists(), expected_done.exists())
             if expected_done.exists():
                 self.assertEqual(actual_done.read_text(), expected_done.read_text())
@@ -80,12 +80,11 @@ class PopTests(unittest.TestCase):
     def test_multiple_project_arguments_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            task_root = root / "tasks"
-            task_root.mkdir()
-            shutil.copy2(REPO_ROOT / "pop", task_root / "pop")
+            (root / "tasks").mkdir()
+            shutil.copy2(REPO_ROOT / "pop", root / "pop")
 
             result = subprocess.run(
-                [sys.executable, str(task_root / "pop"), "one", "two"],
+                [sys.executable, str(root / "pop"), "one", "two"],
                 cwd=root,
                 capture_output=True,
                 text=True,
