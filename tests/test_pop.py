@@ -7,17 +7,17 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-FIXTURE_ROOT = REPO_ROOT / "tests" / "fixtures" / "pop_task"
+FIXTURE_ROOT = REPO_ROOT / "tests" / "fixtures" / "pop"
 
 
-class PopTaskTests(unittest.TestCase):
+class PopTests(unittest.TestCase):
     def assert_case(self, name: str) -> None:
         fixture = FIXTURE_ROOT / name
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             task_root = root / "tasks"
             shutil.copytree(fixture / "before", task_root)
-            shutil.copy2(REPO_ROOT / "pop_task", task_root / "pop_task")
+            shutil.copy2(REPO_ROOT / "pop", task_root / "pop")
 
             project_root = root / "sample"
             work_dir = project_root / "nested"
@@ -25,7 +25,7 @@ class PopTaskTests(unittest.TestCase):
             (project_root / ".git").mkdir()
 
             result = subprocess.run(
-                [sys.executable, str(task_root / "pop_task")],
+                [sys.executable, str(task_root / "pop")],
                 cwd=work_dir,
                 capture_output=True,
                 text=True,
