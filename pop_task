@@ -14,10 +14,18 @@ from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 
+def project_root(path: Path) -> Path:
+    for parent in (path, *path.parents):
+        if (parent / ".git").exists():
+            return parent
+    return path
+
+
 def main() -> None:
-    name = Path(".").absolute().name
-    task_file = Path(".") / f"{name}.md"
-    done_file = Path("done") / f"{name}.md"
+    name = project_root(Path.cwd()).name
+    root = Path(__file__).resolve().parent
+    task_file = root / f"{name}.md"
+    done_file = root / "done" / f"{name}.md"
 
     def is_sep(s: str) -> bool:
         return s.startswith("---")
