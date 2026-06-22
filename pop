@@ -21,8 +21,16 @@ def project_root(path: Path) -> Path:
     return path
 
 
+def project_name(args: list[str]) -> str:
+    if len(args) > 1:
+        sys.exit("Usage: pop [project]")
+    if args:
+        return args[0]
+    return project_root(Path.cwd()).name
+
+
 def main() -> None:
-    name = project_root(Path.cwd()).name
+    name = project_name(sys.argv[1:])
     root = Path(__file__).resolve().parent
     task_file = root / f"{name}.md"
     done_file = root / "done" / f"{name}.md"

@@ -11,13 +11,22 @@ FIXTURE_ROOT = REPO_ROOT / "tests" / "fixtures" / "pop"
 
 
 class PopTests(unittest.TestCase):
-    def assert_case(self, name: str) -> None:
+    def assert_case(
+        self,
+        name: str,
+        project_name: str = "sample",
+        args: list[str] | None = None,
+    ) -> None:
         fixture = FIXTURE_ROOT / name
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             task_root = root / "tasks"
             shutil.copytree(fixture / "before", task_root)
             shutil.copy2(REPO_ROOT / "pop", task_root / "pop")
+            if project_name != "sample":
+                (task_root / f"{project_name}.md").write_text(
+                    (task_root / "sample.md").read_text(),
+                )
 
             project_root = root / "sample"
             work_dir = project_root / "nested"
@@ -25,7 +34,7 @@ class PopTests(unittest.TestCase):
             (project_root / ".git").mkdir()
 
             result = subprocess.run(
-                [sys.executable, str(task_root / "pop")],
+                [sys.executable, str(task_root / "pop"), *(args or [])],
                 cwd=work_dir,
                 capture_output=True,
                 text=True,
@@ -40,12 +49,12 @@ class PopTests(unittest.TestCase):
             self.assertEqual(result.stdout, (expected / "stdout.txt").read_text())
             self.assertEqual(result.stderr, (expected / "stderr.txt").read_text())
             self.assertEqual(
-                (task_root / "sample.md").read_text(),
+                (task_root / f"{project_name}.md").read_text(),
                 (expected / "sample.md").read_text(),
             )
 
             expected_done = expected / "done" / "sample.md"
-            actual_done = task_root / "done" / "sample.md"
+            actual_done = task_root / "done" / f"{project_name}.md"
             self.assertEqual(actual_done.exists(), expected_done.exists())
             if expected_done.exists():
                 self.assertEqual(actual_done.read_text(), expected_done.read_text())
@@ -64,6 +73,28 @@ class PopTests(unittest.TestCase):
 
     def test_successful_pop_can_leave_empty_task_file(self) -> None:
         self.assert_case("leaves_empty")
+
+    def test_explicit_project_argument_selects_that_project(self) -> None:
+        self.assert_case("normal", project_name="other", args=["other"])
+
+    def test_multiple_project_arguments_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            task_root = root / "tasks"
+            task_root.mkdir()
+            shutil.copy2(REPO_ROOT / "pop", task_root / "pop")
+
+            result = subprocess.run(
+                [sys.executable, str(task_root / "pop"), "one", "two"],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "Usage: pop [project]\n")
 
 
 if __name__ == "__main__":
