@@ -1,9 +1,3 @@
-# Automatically save the current state so that the user can quit and reload and get back to where they were.
-
-* Do not save the state of the transport or replay buttons.
-* Use the XDG Base Directory Specification
-
----
 
 # Make textbox editable
 
