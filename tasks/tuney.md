@@ -1,9 +1,7 @@
+# EG bias
+
 
 # Make textbox editable
-
----
-
-# EG bias
 
 ---
 
