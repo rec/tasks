@@ -1,3 +1,7 @@
+import contextlib
+import importlib.machinery
+import importlib.util
+import io
 import shutil
 import subprocess
 import sys
@@ -76,6 +80,37 @@ class PopTests(unittest.TestCase):
 
     def test_explicit_project_argument_selects_that_project(self) -> None:
         self.assert_case("normal", project_name="other", args=["other"])
+
+    def test_main_accepts_project_parameter(self) -> None:
+        fixture = FIXTURE_ROOT / "normal"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            task_dir = root / "tasks"
+            shutil.copytree(fixture / "before", task_dir)
+            shutil.copy2(REPO_ROOT / "pop", root / "pop")
+            (task_dir / "other.md").write_text((task_dir / "sample.md").read_text())
+
+            loader = importlib.machinery.SourceFileLoader("pop_test", str(root / "pop"))
+            spec = importlib.util.spec_from_loader(loader.name, loader)
+            self.assertIsNotNone(spec)
+            self.assertIsNotNone(spec.loader)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                module.main("other")
+
+            expected = fixture / "after"
+            self.assertEqual(stdout.getvalue(), (expected / "stdout.txt").read_text())
+            self.assertEqual(
+                (task_dir / "other.md").read_text(),
+                (expected / "sample.md").read_text(),
+            )
+            self.assertEqual(
+                (root / "done" / "other.md").read_text(),
+                (expected / "done" / "sample.md").read_text(),
+            )
 
     def test_multiple_project_arguments_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

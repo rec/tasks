@@ -29,8 +29,8 @@ def project_name(args: list[str]) -> str:
     return project_root(Path.cwd()).name
 
 
-def main() -> None:
-    name = project_name(sys.argv[1:])
+def main(project: str | None = None) -> None:
+    name = project if project is not None else project_name(sys.argv[1:])
     root = Path(__file__).resolve().parent
     task_file = root / "tasks" / f"{name}.md"
     done_file = root / "done" / f"{name}.md"
@@ -39,10 +39,11 @@ def main() -> None:
         return s.startswith("---")
 
     cuts: list[list[str]] = [[]]
-    for line in task_file.open():
-        cuts[-1].append(line)
-        if is_sep(line):
-            cuts.append([])
+    with task_file.open() as fp:
+        for line in fp:
+            cuts[-1].append(line)
+            if is_sep(line):
+                cuts.append([])
 
     while cuts:
         task = cuts.pop(0)
