@@ -23,4 +23,6 @@ If `record_keys` is not set, it defaults to `press`.
 `record_keys` cannot be `all`.
 `record_key_all_apps` must be False
 
+----
+
 ### Split the something.
