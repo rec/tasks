@@ -21,6 +21,19 @@ def project_root(path: Path) -> Path:
     return path
 
 
+def strip_empty_lines(lines: list[str]) -> list[str]:
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return lines
+
+
+def task_lines(task: list[str]) -> tuple[list[str], str]:
+    old_line = task.pop() if task and task[-1].startswith("---") else "---\n"
+    return strip_empty_lines(task), old_line
+
+
 def main() -> None:
     name = project_root(Path.cwd()).name
     root = Path(__file__).resolve().parent
@@ -43,20 +56,21 @@ def main() -> None:
     else:
         sys.exit("No tasks found")
 
-    def drop_empty(it: Iterable[str]) -> Iterator[str]:
-        found = False
-        for i in it:
-            if found := found or not i.strip():
-                yield i
+    def remaining_lines(tasks: Iterable[list[str]]) -> Iterator[str]:
+        for remaining_task in tasks:
+            lines, separator = task_lines(remaining_task)
+            if lines:
+                yield from lines
+                yield separator
 
-    old_line = task.pop() if is_sep(task[-1]) else "---\n"
-    print(*task)
+    lines, old_line = task_lines(task)
+    sys.stdout.writelines(lines)
     with task_file.open("w") as fp:
-        fp.writelines(drop_empty(i for c in cuts for i in c))
+        fp.writelines(remaining_lines(cuts))
     done_file.parent.mkdir(exist_ok=True)
     with done_file.open("a") as fp:
-        fp.write(f"{old_line}\n")
-        fp.writelines(drop_empty(task))
+        fp.writelines(lines)
+        fp.write(old_line)
 
 
 if __name__ == "__main__":
